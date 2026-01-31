@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trivia Master 🧠</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Rubik', sans-serif;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .correct-answer {
+            background-color: #4ade80 !important;
+            color: #064e3b !important;
+            border-color: #22c55e !important;
+        }
+
+        .wrong-answer {
+            background-color: #f87171 !important;
+            color: #7f1d1d !important;
+            border-color: #ef4444 !important;
+        }
+    </style>
+</head>
+
+<body class="bg-gradient-to-tr from-violet-600 to-indigo-600 min-h-screen flex items-center justify-center p-4">
+
+    <!-- Container -->
+    <div class="glass w-full max-w-2xl rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-indigo-700"><i class="fa-solid fa-brain"></i> Trivia Master</h1>
+            <div class="flex items-center gap-4">
+                <div id="scoreDisplay" class="hidden bg-indigo-100 text-indigo-800 px-4 py-1 rounded-full font-bold">
+                    Score: <span id="currentScore">0</span>
+                </div>
+                <button onclick="toggleSettings()" class="text-gray-400 hover:text-indigo-600 transition">
+                    <i class="fa-solid fa-gear text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="startScreen" class="text-center">
+            <div class="mb-8">
+                <i class="fa-solid fa-question-circle text-6xl text-indigo-200 mb-4 inline-block"></i>
+                <h2 class="text-2xl font-bold text-gray-800">Ready to test your knowledge?</h2>
+                <p class="text-gray-500">Enter any topic and let AI challenge you.</p>
+            </div>
+
+            <div class="space-y-4 max-w-sm mx-auto">
+                <input type="text" id="topicInput" placeholder="Enter Topic (e.g., 'Star Wars', 'Biology')"
+                    class="w-full p-4 rounded-xl border-2 border-indigo-100 focus:border-indigo-500 focus:outline-none text-center font-bold text-lg text-gray-700 placeholder-gray-300">
+
+                <select id="difficultyInput"
+                    class="w-full p-4 rounded-xl border-2 border-indigo-100 focus:border-indigo-500 focus:outline-none text-center font-bold text-gray-700 bg-white">
+                    <option value="Easy">Easy</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Hard">Hard</option>
+                    <option value="Expert">Expert</option>
+                </select>
+
+                <button onclick="startQuiz()" id="startBtn"
+                    class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl hover:bg-indigo-700 transition transform hover:scale-105 shadow-lg shadow-indigo-200">
+                    Generate Quiz
+                </button>
+            </div>
+        </div>
+
+        <!-- Loader -->
+        <div id="loader" class="hidden flex flex-col items-center justify-center py-12">
+            <div class="animate-spin text-5xl text-indigo-600 mb-4"><i class="fa-solid fa-arrows-rotate"></i></div>
+            <p class="text-gray-500 font-bold animate-pulse">Generating Questions...</p>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quizScreen" class="hidden">
+            <!-- Progress Bar -->
+            <div class="w-full bg-gray-200 rounded-full h-2.5 mb-6">
+                <div id="progressBar" class="bg-indigo-600 h-2.5 rounded-full" style="width: 0%"></div>
+            </div>
+
+            <!-- Question -->
+            <h2 id="questionText" class="text-2xl font-bold text-gray-800 mb-8 text-center leading-relaxed">
+                <!-- Text here -->
+            </h2>
+
+            <!-- Options -->
+            <div id="optionsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Buttons here -->
+            </div>
+
+            <!-- Next Button (Hidden initially) -->
+            <div class="mt-8 text-center">
+                <button id="nextBtn" onclick="nextQuestion()"
+                    class="hidden bg-indigo-600 text-white font-bold py-3 px-8 rounded-full hover:bg-indigo-700 transition">
+                    Next Question <i class="fa-solid fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- End Screen -->
+        <div id="endScreen" class="hidden text-center py-8">
+            <div class="mb-6">
+                <div
+                    class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-indigo-100 text-indigo-600 text-4xl font-bold mb-4">
+                    <span id="finalScore">0</span>/5
+                </div>
+                <h2 class="text-3xl font-bold text-gray-800" id="finalMessage">Great Job!</h2>
+            </div>
+
+            <button onclick="location.reload()"
+                class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-full hover:bg-indigo-700 transition transform hover:scale-105 shadow-md">
+                Play Again
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[100]">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full m-4 shadow-2xl">
+            <h2 class="text-xl font-bold mb-4 text-gray-800">API Settings</h2>
+            <input type="password" id="apiKeyInput" placeholder="Gemini API Key..."
+                class="w-full p-3 border rounded-xl mb-4 focus:ring-2 focus:ring-indigo-500 outline-none">
+            <div class="flex justify-end gap-2">
+                <button onclick="toggleSettings()" class="px-4 py-2 text-gray-500 hover:text-gray-700">Cancel</button>
+                <button onclick="saveApiKey()"
+                    class="px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=";
+        let questions = [];
+        let currentQ = 0;
+        let score = 0;
+        let isAnswered = false;
+
+        // Init
+        window.addEventListener('DOMContentLoaded', () => {
+            const key = localStorage.getItem('gemini_api_key');
+            if (!key) document.getElementById('settingsModal').classList.remove('hidden');
+            else document.getElementById('apiKeyInput').value = key;
+        });
+
+        function toggleSettings() {
+            document.getElementById('settingsModal').classList.toggle('hidden');
+        }
+
+        function saveApiKey() {
+            const key = document.getElementById('apiKeyInput').value.trim();
+            if (key) {
+                localStorage.setItem('gemini_api_key', key);
+                toggleSettings();
+            }
+        }
+
+        async function startQuiz() {
+            const topic = document.getElementById('topicInput').value.trim();
+            const difficulty = document.getElementById('difficultyInput').value;
+            const apiKey = localStorage.getItem('gemini_api_key');
+
+            if (!apiKey) return toggleSettings();
+            if (!topic) return alert("Please enter a topic!");
+
+            // UI
+            const startScreen = document.getElementById('startScreen');
+            const loader = document.getElementById('loader');
+
+            startScreen.classList.add('hidden');
+            loader.classList.remove('hidden');
+
+            try {
+                const prompt = `Generate 5 multiple choice trivia questions about "${topic}". Difficulty: ${difficulty}.
+                Return strictly VALID JSON array of objects.
+                Format:
+                [
+                    {
+                        "question": "Question text here?",
+                        "options": ["Answer A", "Answer B", "Answer C", "Answer D"],
+                        "answer": 0 // Index of correct answer (0-3)
+                    }
+                ]`;
+
+                const response = await fetch(`${API_URL}${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message);
+
+                let text = data.candidates[0].content.parts[0].text;
+                text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
+                try {
+                    questions = JSON.parse(text);
+                } catch (e) {
+                    const match = text.match(/\[.*\]/s);
+                    if (match) questions = JSON.parse(match[0]);
+                    else throw new Error("JSON Parse Error");
+                }
+
+                if (questions.length === 0) throw new Error("No questions generated.");
+
+                // Start
+                currentQ = 0;
+                score = 0;
+                document.getElementById('currentScore').innerText = 0;
+                document.getElementById('scoreDisplay').classList.remove('hidden');
+                loader.classList.add('hidden');
+                document.getElementById('quizScreen').classList.remove('hidden');
+                showQuestion();
+
+            } catch (e) {
+                console.error(e);
+                alert("Error: " + e.message);
+                loader.classList.add('hidden');
+                startScreen.classList.remove('hidden');
+            }
+        }
+
+        function showQuestion() {
+            if (currentQ >= questions.length) {
+                endQuiz();
+                return;
+            }
+
+            const q = questions[currentQ];
+            document.getElementById('questionText').innerText = q.question;
+            const optsContainer = document.getElementById('optionsContainer');
+            optsContainer.innerHTML = '';
+
+            // Progress
+            const pct = ((currentQ) / questions.length) * 100;
+            document.getElementById('progressBar').style.width = pct + '%';
+
+            isAnswered = false;
+            document.getElementById('nextBtn').classList.add('hidden');
+
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full p-4 text-left rounded-xl border-2 border-gray-200 hover:border-indigo-400 hover:bg-indigo-50 transition font-medium text-gray-700";
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(idx, btn, q.answer);
+                optsContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedIdx, btn, correctIdx) {
+            if (isAnswered) return;
+            isAnswered = true;
+
+            const buttons = document.getElementById('optionsContainer').children;
+
+            if (selectedIdx === correctIdx) {
+                btn.classList.add('correct-answer');
+                score++;
+                document.getElementById('currentScore').innerText = score;
+                createConfetti(btn);
+            } else {
+                btn.classList.add('wrong-answer');
+                buttons[correctIdx].classList.add('correct-answer'); // Show correct one
+            }
+
+            document.getElementById('nextBtn').classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            currentQ++;
+            showQuestion();
+        }
+
+        function endQuiz() {
+            document.getElementById('quizScreen').classList.add('hidden');
+            document.getElementById('endScreen').classList.remove('hidden');
+            document.getElementById('finalScore').innerText = score;
+
+            let msg = "Nice Try!";
+            if (score === 5) msg = "Perfect Score! 🏆";
+            else if (score >= 3) msg = "Well Done! 🌟";
+
+            document.getElementById('finalMessage').innerText = msg;
+        }
+
+        // Mini confetti effect
+        function createConfetti(element) {
+            // Simple visual effect could go here
+        }
+    </script>
+</body>
+
+</html>
